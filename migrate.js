@@ -12,6 +12,7 @@ const { migrateStocks } = require('./src/scripts/mingrateStocks');
 const { migrateGallery } = require('./src/scripts/migrateGallery');
 const { migrateCategories } = require('./src/scripts/migrateCategories');
 const { migrateCart } = require('./src/scripts/migrateCart');
+const { migrateReviews } = require('./src/scripts/migrateReviews');
 // ... impor skrip lain
 
 async function runMigration() {
@@ -32,6 +33,7 @@ async function runMigration() {
     await migrateGallery(dbFirestore, dbMongo);
     await migrateCategories(dbFirestore, dbMongo);
     await migrateCart(dbFirestore, dbMongo);
+    await migrateReviews(dbFirestore, dbMongo);
     // await migratePosts(dbFirestore, dbMongo); // Jalankan skrip lain
     // ... panggil skrip lain
 

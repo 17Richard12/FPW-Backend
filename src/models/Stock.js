@@ -8,10 +8,9 @@ const stockSchema = new Schema (
         jumlah: Number,
         keterangan: String,
         status: String,
-        createdAt: Date
     }, 
     {
-        timestamps: false,
+        timestamps: true,
     }
 );
 
