@@ -1,6 +1,6 @@
 const express = require('express');
 const {default: mongoose} = require('mongoose');
-const {productRouter, stockRouter, cartRouter, orderRouter, categoriesRouter, galleryRouter} = require('./src/routes');
+const {productRouter, stockRouter, cartRouter, orderRouter, categoriesRouter, galleryRouter, reviewsRouter} = require('./src/routes');
 const app = express();
 const port = 3000;
 require('dotenv').config();
@@ -21,6 +21,7 @@ app.use('/api/cart', cartRouter);
 app.use('/api/orders', orderRouter);
 app.use('/api/categories', categoriesRouter);
 app.use('/api/gallery', galleryRouter);
+app.use('/api/reviews', reviewsRouter);
 
 const initApp = async () => {
     try {
