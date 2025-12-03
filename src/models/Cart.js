@@ -5,10 +5,10 @@ const cartSchema = new Schema (
         _id: String,
         produk_id: String,
         jumlah: Number, 
-        
+        user_id: String,
     }, 
     {
-        timestamps: false,
+        timestamps: true,
     }
 );
 
