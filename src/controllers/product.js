@@ -54,6 +54,10 @@ const updateProduct = async (req, res) => {
     }
 }
 
+const updateStockProduct = async (req, res) => {
+
+}
+
 const deleteProduct = async (req, res) => {
     try {
         const {id} = req.params;
@@ -64,4 +68,4 @@ const deleteProduct = async (req, res) => {
     }
 }
 
-module.exports = {queryProduct, querySingleProduct, insertProduct, updateProduct, deleteProduct};
+module.exports = {queryProduct, querySingleProduct, insertProduct, updateProduct, updateStockProduct, deleteProduct};

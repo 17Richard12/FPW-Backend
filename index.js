@@ -1,6 +1,6 @@
 const express = require('express');
 const {default: mongoose} = require('mongoose');
-const {productRouter} = require('./src/routes');
+const {productRouter, stockRouter, cartRouter, orderRouter, categoriesRouter, galleryRouter} = require('./src/routes');
 const app = express();
 const port = 3000;
 require('dotenv').config();
@@ -15,7 +15,12 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
-app.use('/product', productRouter);
+app.use('/api/products', productRouter);
+app.use('/api/stock', stockRouter);
+app.use('/api/cart', cartRouter);
+app.use('/api/orders', orderRouter);
+app.use('/api/categories', categoriesRouter);
+app.use('/api/gallery', galleryRouter);
 
 const initApp = async () => {
     try {
