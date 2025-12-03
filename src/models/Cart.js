@@ -2,6 +2,9 @@ const {default: mongoose, Schema} = require('mongoose');
 
 const cartSchema = new Schema (
     {
+        _id: String,
+        produk_id: String,
+        jumlah: Number, 
         
     }, 
     {
