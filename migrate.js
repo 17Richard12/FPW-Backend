@@ -8,6 +8,10 @@ const { connectToMongo, client } = require('./src/config/mongo');
 const { migrateProducts } = require('./src/scripts/migrateProducts');
 const { migrateOrders } = require('./src/scripts/migrateOrders');
 const { migrateUsers } = require('./src/scripts/migrateUsers');
+const { migrateStocks } = require('./src/scripts/mingrateStocks');
+const { migrateGallery } = require('./src/scripts/migrateGallery');
+const { migrateCategories } = require('./src/scripts/migrateCategories');
+const { migrateCart } = require('./src/scripts/migrateCart');
 // ... impor skrip lain
 
 async function runMigration() {
@@ -24,6 +28,10 @@ async function runMigration() {
     await migrateProducts(dbFirestore, dbMongo);
     await migrateOrders(dbFirestore, dbMongo);
     await migrateUsers(dbFirestore, dbMongo);
+    await migrateStocks(dbFirestore, dbMongo);
+    await migrateGallery(dbFirestore, dbMongo);
+    await migrateCategories(dbFirestore, dbMongo);
+    await migrateCart(dbFirestore, dbMongo);
     // await migratePosts(dbFirestore, dbMongo); // Jalankan skrip lain
     // ... panggil skrip lain
 
