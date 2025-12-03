@@ -2,10 +2,11 @@ const {default: mongoose, Schema} = require('mongoose');
 
 const categoriesSchema = new Schema (
     {
-        
+        _id: String, 
+        nama: String,
     }, 
     {
-        timestamps: false,
+        timestamps: true,
     }
 );
 
