@@ -2,10 +2,14 @@ const {default: mongoose, Schema} = require('mongoose');
 
 const gallerySchema = new Schema (
     {
-        
+        _id: String, 
+        image_url: String, 
+        alt_text: String,
+        desription: String, 
+        active: Boolean,
     }, 
     {
-        timestamps: false,
+        timestamps: true,
     }
 );
 
