@@ -1,6 +1,6 @@
 // src/config/firebase.js
 const admin = require("firebase-admin");
-const serviceAccount = require("../../project-sdp-fpw-firebase-adminsdk-fbsvc-48df26685a.json"); // Sesuaikan path
+const serviceAccount = require("../../serviceAccounts.json"); // Sesuaikan path
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
