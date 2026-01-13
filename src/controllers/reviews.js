@@ -21,10 +21,10 @@ const queryReviews = async (req, res) => {
           ...review.toObject(),
           produk: product
             ? {
-                nama: product.nama,
-                img_url: product.img_url,
-                harga: product.harga,
-              }
+              nama: product.nama,
+              img_url: product.img_url,
+              harga: product.harga,
+            }
             : null,
         };
       })
@@ -195,20 +195,20 @@ const queryAllReviewsAdmin = async (req, res) => {
           order_id: r.order_id || "N/A", // order_id tetap muncul
           user: user
             ? {
-                name: user.name,
-                email: user.email,
-                photo: user.photoURL,
-              }
+              name: user.name,
+              email: user.email,
+              photo: user.photoURL,
+            }
             : {
-                name: r.userName || "Anonymous",
-                photo: r.userPhotoURL || null,
-              },
+              name: r.userName || "Anonymous",
+              photo: r.userPhotoURL || null,
+            },
           produk: product
             ? {
-                nama: product.nama,
-                img_url: product.img_url,
-                harga: product.harga,
-              }
+              nama: product.nama,
+              img_url: product.img_url,
+              harga: product.harga,
+            }
             : null,
         };
       })
