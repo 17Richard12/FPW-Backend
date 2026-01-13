@@ -4,6 +4,7 @@ const {
   querySingleReviews,
   insertReviews,
   deleteRevies,
+  queryAllReviewsAdmin,
 } = require("../controllers/reviews");
 const router = express.Router();
 
@@ -18,5 +19,7 @@ router.post("/", insertReviews);
 
 // DELETE /api/reviews/:id - Delete review
 router.delete("/:id", deleteRevies);
+
+router.get("/admin", queryAllReviewsAdmin);
 
 module.exports = router;

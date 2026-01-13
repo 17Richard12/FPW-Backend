@@ -21,10 +21,10 @@ const queryReviews = async (req, res) => {
           ...review.toObject(),
           produk: product
             ? {
-                nama: product.nama,
-                img_url: product.img_url,
-                harga: product.harga,
-              }
+              nama: product.nama,
+              img_url: product.img_url,
+              harga: product.harga,
+            }
             : null,
         };
       })
@@ -172,9 +172,60 @@ const deleteRevies = async (req, res) => {
   }
 };
 
+// GET /api/reviews/admin - Ambil semua review (ADMIN)
+const queryAllReviewsAdmin = async (req, res) => {
+  try {
+    // Ambil semua review
+    const reviews = await Reviews.find().sort({ createdAt: -1 });
+
+    // Join manual dengan Product dan User
+    const formatted = await Promise.all(
+      reviews.map(async (r) => {
+        // Ambil produk
+        const product = r.produk_id
+          ? await Product.findById(r.produk_id)
+          : null;
+
+        // Ambil user
+        const user = r.userId ? await User.findById(r.userId) : null;
+
+        return {
+          _id: r._id,
+          rating: r.rating,
+          komentar: r.komentar,
+          createdAt: r.createdAt,
+          order_id: r.order_id || "N/A", // order_id tetap muncul
+          user: user
+            ? {
+              name: user.name,
+              email: user.email,
+              photo: user.photoURL,
+            }
+            : { name: r.userName || "Anonymous", photo: r.userPhotoURL || null },
+          produk: product
+            ? {
+              nama: product.nama,
+              img_url: product.img_url,
+              harga: product.harga,
+            }
+            : null,
+        };
+      })
+    );
+
+    return res.status(200).json(formatted);
+  } catch (error) {
+    console.error("Error queryAllReviewsAdmin:", error);
+    return res.status(500).json({ error: "Gagal mengambil semua review" });
+  }
+};
+
+
+
 module.exports = {
   queryReviews,
   querySingleReviews,
   insertReviews,
   deleteRevies,
+  queryAllReviewsAdmin,
 };
