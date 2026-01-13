@@ -102,14 +102,6 @@ const insertReviews = async (req, res) => {
       return res.status(400).json({ error: "Rating harus antara 1-5" });
     }
 
-    // Cek apakah user sudah pernah review produk ini
-    const existingReview = await Reviews.findOne({ userId, produk_id });
-    if (existingReview) {
-      return res
-        .status(400)
-        .json({ error: "Anda sudah pernah mereview produk ini" });
-    }
-
     // Validasi: cek apakah user pernah order produk ini
     const userOrder = await Order.findOne({
       userId,
