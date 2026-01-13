@@ -1,10 +1,22 @@
-const express = require('express');
-const { queryReviews, querySingleReviews, insertReviews, deleteRevies } = require('../controllers/reviews');
+const express = require("express");
+const {
+  queryReviews,
+  querySingleReviews,
+  insertReviews,
+  deleteRevies,
+} = require("../controllers/reviews");
 const router = express.Router();
 
-router.get('/', queryReviews);
-router.get('/:id', querySingleReviews);
-router.post('/', insertReviews);
-router.delete('/:id', deleteRevies);
+// GET /api/reviews?userId={userId} - Get reviews by user
+router.get("/", queryReviews);
+
+// GET /api/reviews/product/:id - Get reviews by product
+router.get("/product/:id", querySingleReviews);
+
+// POST /api/reviews - Submit new review
+router.post("/", insertReviews);
+
+// DELETE /api/reviews/:id - Delete review
+router.delete("/:id", deleteRevies);
 
 module.exports = router;
