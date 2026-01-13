@@ -111,7 +111,7 @@ const insertProduct = async (req, res) => {
       harga: Number(harga),
       img_name: img_name || "",
       img_url: img_url || "",
-      kategori: kategori_id || "",
+      kategori_id: kategori_id || "",
       deskripsi: deskripsi || "",
       link_shopee: link_shopee || "",
       link_tokopedia: link_tokopedia || "",
