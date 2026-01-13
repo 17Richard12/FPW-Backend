@@ -6,11 +6,9 @@ const { v4: uuidv4 } = require('uuid');
 const queryCart = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = id;
 
-    if (!userId) {
-      return res.status(400).json({ error: "userId diperlukan" });
-    }
+    const userId = req.query.userId;
+    if (!userId) return res.status(400).json({ error: "userId diperlukan" });
 
     // 1. Ambil semua item keranjang user
     const cartItems = await Cart.find({ userId }).sort({ createdAt: -1 });
@@ -21,9 +19,9 @@ const queryCart = async (req, res) => {
     for (const item of cartItems) {
       // Ambil data produk
       const product = await Product.findById(item.produk_id);
-      
+
       // Jika produk sudah dihapus, item keranjang di-skip (atau bisa dihapus otomatis)
-      if (!product) continue; 
+      if (!product) continue;
 
       // --- LOGIKA HITUNG STOK (Sama seperti kode Firebase Anda) ---
       // Ambil semua history stok untuk produk ini

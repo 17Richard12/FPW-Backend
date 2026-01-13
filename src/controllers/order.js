@@ -1,20 +1,12 @@
 const { Order, Stock, Product } = require("../models");
 const { v4: uuidv4 } = require("uuid");
 
-// GET /api/orders?userId={userId} - Mengambil daftar order
-// Query param userId opsional: jika ada, filter by user. Jika tidak, ambil semua (admin)
+// ===== GET /api/orders?userId={userId} =====
 const queryOrder = async (req, res) => {
   try {
     const { userId } = req.query;
-
-    let filter = {};
-    if (userId) {
-      filter.userId = userId;
-    }
-
-    // Ambil orders dengan sort descending by createdAt
+    const filter = userId ? { userId } : {};
     const orders = await Order.find(filter).sort({ createdAt: -1 });
-
     return res.status(200).json(orders);
   } catch (error) {
     console.error("Error queryOrder:", error);
@@ -22,33 +14,29 @@ const queryOrder = async (req, res) => {
   }
 };
 
-// POST /api/orders - Membuat order baru (Checkout)
-// Saat checkout, buat order dan kurangi stok dengan status 'pending'
+// ===== POST /api/orders =====
 const insertOrder = async (req, res) => {
   try {
     const { userId, items, total, _id } = req.body;
-
-    if (!userId || !items || !Array.isArray(items) || items.length === 0) {
+    if (!userId || !items?.length) {
       return res.status(400).json({ error: "Data order tidak lengkap" });
     }
 
-    // Validasi dan ambil data produk untuk setiap item
     const validatedItems = [];
+
     for (const item of items) {
       const product = await Product.findById(item.produk_id);
       if (!product) {
-        return res
-          .status(404)
-          .json({ error: `Produk ${item.produk_id} tidak ditemukan` });
+        return res.status(404).json({ error: `Produk ${item.produk_id} tidak ditemukan` });
       }
 
-      // Cek stok tersedia
+      // Hitung stok real-time dari Stock collection
       const stockEntries = await Stock.find({ produk_id: item.produk_id });
       const currentStock = stockEntries.reduce((sum, entry) => {
         if (entry.tipe === "masuk") return sum + entry.jumlah;
-        if (entry.tipe === "keluar") return sum - entry.jumlah;
+        if (entry.tipe === "keluar" && entry.status === "confirmed") return sum - entry.jumlah;
         return sum;
-      }, 0);
+      }, product.stok || 0);
 
       if (currentStock < item.jumlah) {
         return res.status(400).json({
@@ -67,80 +55,57 @@ const insertOrder = async (req, res) => {
       });
     }
 
-    // Buat order baru dengan status 'pending'
     const orderId = _id || uuidv4();
     const orderData = {
       _id: orderId,
       userId,
       items: validatedItems,
-      total:
-        total ||
-        validatedItems.reduce(
-          (sum, item) => sum + item.produk.harga * item.jumlah,
-          0
-        ),
+      total: total || validatedItems.reduce((sum, item) => sum + item.produk.harga * item.jumlah, 0),
       status: "pending",
     };
 
     const newOrder = await Order.create(orderData);
 
-    // Kurangi stok untuk setiap item dengan status 'pending'
+    // Buat stock entry pending
     for (const item of validatedItems) {
-      const stockEntry = {
+      await Stock.create({
         _id: uuidv4(),
         produk_id: item.produk_id,
         tipe: "keluar",
         jumlah: item.jumlah,
         keterangan: `Order #${orderId} - ${item.produk.nama}`,
-        status: "pending", // Pending sampai order dikonfirmasi
-      };
-      await Stock.create(stockEntry);
+        status: "pending",
+      });
     }
 
-    return res.status(201).json({
-      message: "Order berhasil dibuat",
-      data: newOrder,
-    });
+    return res.status(201).json({ message: "Order berhasil dibuat", data: newOrder });
   } catch (error) {
     console.error("Error insertOrder:", error);
-    return res
-      .status(500)
-      .json({ error: "Gagal membuat order", details: error.message });
+    return res.status(500).json({ error: "Gagal membuat order", details: error.message });
   }
 };
 
-// PATCH /api/orders/:id - Update status order (pending / completed / cancelled)
+// ===== PATCH /api/orders/:id =====
 const updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!status || !["pending", "completed", "cancelled"].includes(status)) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Status tidak valid. Gunakan: pending, completed, atau cancelled",
-        });
+    if (!status || !["pending", "accepted", "rejected"].includes(status)) {
+      return res.status(400).json({ error: "Status tidak valid. Gunakan: pending, accepted, atau rejected" });
     }
 
     const order = await Order.findById(id);
-    if (!order) {
-      return res.status(404).json({ error: "Order tidak ditemukan" });
-    }
+    if (!order) return res.status(404).json({ error: "Order tidak ditemukan" });
 
     const oldStatus = order.status;
-
-    // Update status order
     order.status = status;
     await order.save();
 
-    // Handle stock berdasarkan perubahan status
-    if (oldStatus === "pending" && status === "completed") {
-      // Konfirmasi stok - ubah status stock dari pending ke completed
+    // Jika order awalnya pending, lakukan perubahan stok
+    if (oldStatus === "pending" && status === "accepted") {
       await confirmStockHelper(id);
-    } else if (oldStatus === "pending" && status === "cancelled") {
-      // Kembalikan stok - ubah status stock dari pending ke cancelled (efektif mengembalikan stok)
+    } else if (oldStatus === "pending" && status === "rejected") {
       await returnStockHelper(id);
     }
 
@@ -152,96 +117,75 @@ const updateStatus = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updateStatus:", error);
-    return res
-      .status(500)
-      .json({ error: "Gagal update status order", details: error.message });
+    return res.status(500).json({ error: "Gagal update status order", details: error.message });
   }
 };
 
-// POST /api/orders/:id/return-stock - Mengembalikan stock (jika order ditolak)
-// Ubah status stock entries dari 'pending' menjadi 'cancelled'
-const returnStock = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const order = await Order.findById(id);
-    if (!order) {
-      return res.status(404).json({ error: "Order tidak ditemukan" });
-    }
-
-    await returnStockHelper(id);
-
-    return res.status(200).json({
-      message: "Stok berhasil dikembalikan",
-      success: true,
-    });
-  } catch (error) {
-    console.error("Error returnStock:", error);
-    return res
-      .status(500)
-      .json({ error: "Gagal mengembalikan stok", details: error.message });
-  }
-};
-
-// POST /api/orders/:id/confirm-stock - Konfirmasi pengurangan stock (jika order diterima)
-// Ubah status stock entries dari 'pending' menjadi 'completed'
+// ===== POST /api/orders/:id/confirm-stock =====
 const confirmStock = async (req, res) => {
   try {
     const { id } = req.params;
-
     const order = await Order.findById(id);
-    if (!order) {
-      return res.status(404).json({ error: "Order tidak ditemukan" });
-    }
+    if (!order) return res.status(404).json({ error: "Order tidak ditemukan" });
 
     await confirmStockHelper(id);
 
-    return res.status(200).json({
-      message: "Stok berhasil dikonfirmasi",
-      success: true,
-    });
+    return res.status(200).json({ message: "Stok berhasil dikonfirmasi", success: true });
   } catch (error) {
     console.error("Error confirmStock:", error);
-    return res
-      .status(500)
-      .json({ error: "Gagal konfirmasi stok", details: error.message });
+    return res.status(500).json({ error: "Gagal konfirmasi stok", details: error.message });
   }
 };
 
-// Helper function: Kembalikan stok dengan mengubah status stock menjadi 'cancelled'
-async function returnStockHelper(orderId) {
-  // Cari semua stock entries untuk order ini dengan status 'pending'
+// ===== POST /api/orders/:id/return-stock =====
+const returnStock = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findById(id);
+    if (!order) return res.status(404).json({ error: "Order tidak ditemukan" });
+
+    await returnStockHelper(id);
+
+    return res.status(200).json({ message: "Stok berhasil dikembalikan", success: true });
+  } catch (error) {
+    console.error("Error returnStock:", error);
+    return res.status(500).json({ error: "Gagal mengembalikan stok", details: error.message });
+  }
+};
+
+// ===== Helper Functions =====
+
+// Hanya ubah status pending -> rejected, stok fisik tidak berubah
+const returnStockHelper = async (orderId) => {
   const stockEntries = await Stock.find({
     keterangan: new RegExp(`Order #${orderId}`, "i"),
     status: "pending",
   });
 
-  // Update status menjadi 'cancelled' (ini akan membuat stok kembali)
   for (const entry of stockEntries) {
-    entry.status = "cancelled";
+    // kembalikan stok fisik
+    await Product.findByIdAndUpdate(entry.produk_id, { $inc: { stok: entry.jumlah } });
+
+    // ubah status stock menjadi rejected
+    entry.status = "rejected";
     await entry.save();
   }
-}
+};
 
-// Helper function: Konfirmasi stok dengan mengubah status stock menjadi 'completed'
-async function confirmStockHelper(orderId) {
-  // Cari semua stock entries untuk order ini dengan status 'pending'
+
+// Kurangi stok fisik, ubah status pending -> confirmed
+const confirmStockHelper = async (orderId) => {
   const stockEntries = await Stock.find({
     keterangan: new RegExp(`Order #${orderId}`, "i"),
     status: "pending",
   });
 
-  // Update status menjadi 'completed'
   for (const entry of stockEntries) {
-    entry.status = "completed";
+    await Product.findByIdAndUpdate(entry.produk_id, { $inc: { stok: -entry.jumlah } });
+    entry.status = "confirmed";
     await entry.save();
   }
-}
-
-module.exports = {
-  queryOrder,
-  insertOrder,
-  updateStatus,
-  returnStock,
-  confirmStock,
 };
+
+// ===== EXPORT =====
+module.exports = { queryOrder, insertOrder, updateStatus, confirmStock, returnStock };

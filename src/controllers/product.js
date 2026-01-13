@@ -23,10 +23,16 @@ const queryProduct = async (req, res) => {
         // Hitung total stok dari collection stock
         const stockEntries = await Stock.find({ produk_id: product._id });
         const totalStock = stockEntries.reduce((sum, entry) => {
-          if (entry.tipe === "masuk") return sum + entry.jumlah;
-          if (entry.tipe === "keluar") return sum - entry.jumlah;
+          if (entry.tipe === "masuk") {
+            return sum + entry.jumlah; // semua masuk selalu ditambah
+          }
+          if (entry.tipe === "keluar" && entry.status !== "rejected") {
+            return sum - entry.jumlah; // keluar tapi bukan rejected dikurangi
+          }
+          // keluar yang rejected tidak mempengaruhi stok
           return sum;
         }, 0);
+
 
         // Ambil data kategori
         const category = await Categories.findById(product.kategori_id);
