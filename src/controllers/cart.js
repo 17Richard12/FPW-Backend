@@ -1,12 +1,11 @@
-const { Cart, Product, Stock } = require('../models');
-const { v4: uuidv4 } = require('uuid');
+const { Cart, Product, Stock } = require("../models");
+const { v4: uuidv4 } = require("uuid");
 
-// GET /api/cart
+// GET /api/cart?userId=xxx
 // Mengambil keranjang user + Menghitung stok produk secara realtime
 const queryCart = async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = id;
+    const { userId } = req.query;
 
     if (!userId) {
       return res.status(400).json({ error: "userId diperlukan" });
@@ -21,9 +20,9 @@ const queryCart = async (req, res) => {
     for (const item of cartItems) {
       // Ambil data produk
       const product = await Product.findById(item.produk_id);
-      
+
       // Jika produk sudah dihapus, item keranjang di-skip (atau bisa dihapus otomatis)
-      if (!product) continue; 
+      if (!product) continue;
 
       // --- LOGIKA HITUNG STOK (Sama seperti kode Firebase Anda) ---
       // Ambil semua history stok untuk produk ini
@@ -49,7 +48,7 @@ const queryCart = async (req, res) => {
       // Format data sesuai yang frontend butuhkan
       result.push({
         _id: item._id, // ID Cart
-        id: item._id,  // Duplicate ID untuk kompatibilitas frontend
+        id: item._id, // Duplicate ID untuk kompatibilitas frontend
         produk_id: item.produk_id,
         jumlah: item.jumlah,
         userId: item.userId,
@@ -58,17 +57,19 @@ const queryCart = async (req, res) => {
           nama: product.nama,
           harga: product.harga,
           img_url: product.img_url,
-          stok: stokAkhir // Stok hasil perhitungan realtime
-        }
+          stok: stokAkhir, // Stok hasil perhitungan realtime
+        },
       });
     }
 
     return res.status(200).json(result);
   } catch (error) {
     console.error("Error queryCart:", error);
-    return res.status(500).json({ error: "Gagal mengambil cart", details: error.message });
+    return res
+      .status(500)
+      .json({ error: "Gagal mengambil cart", details: error.message });
   }
-}
+};
 
 // POST /api/cart
 // Menambah item ke cart (atau update jumlah jika sudah ada)
@@ -76,9 +77,14 @@ const insertCart = async (req, res) => {
   try {
     const { produk_id, jumlah, userId, _id } = req.body;
 
+    console.log("Ini userId di backend: ", userId);
+    console.log("Ini produk_id di backend: ", produk_id);
+
     // 1. Validasi
     if (!produk_id || !jumlah || !userId) {
-      return res.status(400).json({ error: "produk_id, jumlah, dan userId wajib diisi" });
+      return res
+        .status(400)
+        .json({ error: "produk_id, jumlah, dan userId wajib diisi" });
     }
 
     // 2. Cek apakah produk valid
@@ -89,6 +95,7 @@ const insertCart = async (req, res) => {
 
     // 3. Cek apakah user sudah punya produk ini di keranjang?
     let cartItem = await Cart.findOne({ userId, produk_id });
+    console.log(cartItem);
 
     if (cartItem) {
       // Skenario A: Update jumlah yang ada
@@ -100,7 +107,7 @@ const insertCart = async (req, res) => {
         _id: _id || uuidv4(),
         userId,
         produk_id,
-        jumlah: Number(jumlah)
+        jumlah: Number(jumlah),
       });
     }
 
@@ -114,15 +121,16 @@ const insertCart = async (req, res) => {
       produk: {
         nama: product.nama,
         harga: product.harga,
-        img_url: product.img_url
-      }
+        img_url: product.img_url,
+      },
     });
-
   } catch (error) {
     console.error("Error insertCart:", error);
-    return res.status(500).json({ error: "Gagal menambah ke cart", details: error.message });
+    return res
+      .status(500)
+      .json({ error: "Gagal menambah ke cart", details: error.message });
   }
-}
+};
 
 // PUT /api/cart/:id
 // Update jumlah item di keranjang secara spesifik
@@ -149,14 +157,15 @@ const updateCart = async (req, res) => {
     return res.status(200).json({
       id: updatedCart._id,
       jumlah: updatedCart.jumlah,
-      message: "Jumlah item berhasil diperbarui"
+      message: "Jumlah item berhasil diperbarui",
     });
-
   } catch (error) {
     console.error("Error updateCart:", error);
-    return res.status(500).json({ error: "Gagal update cart", details: error.message });
+    return res
+      .status(500)
+      .json({ error: "Gagal update cart", details: error.message });
   }
-}
+};
 
 // DELETE /api/cart/:id
 // Hapus item dari keranjang
@@ -172,13 +181,14 @@ const deleteCart = async (req, res) => {
 
     return res.status(200).json({
       id: id,
-      message: "Item cart berhasil dihapus"
+      message: "Item cart berhasil dihapus",
     });
-
   } catch (error) {
     console.error("Error deleteCart:", error);
-    return res.status(500).json({ error: "Gagal menghapus cart", details: error.message });
+    return res
+      .status(500)
+      .json({ error: "Gagal menghapus cart", details: error.message });
   }
-}
+};
 
 module.exports = { queryCart, insertCart, updateCart, deleteCart };
