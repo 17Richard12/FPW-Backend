@@ -21,10 +21,10 @@ const queryReviews = async (req, res) => {
           ...review.toObject(),
           produk: product
             ? {
-              nama: product.nama,
-              img_url: product.img_url,
-              harga: product.harga,
-            }
+                nama: product.nama,
+                img_url: product.img_url,
+                harga: product.harga,
+              }
             : null,
         };
       })
@@ -61,7 +61,7 @@ const querySingleReviews = async (req, res) => {
       userName: review.userName,
       userPhotoURL: review.userPhotoURL,
       rating: review.rating,
-      review_text: review.komentar,
+      komentar: review.komentar,
       createdAt: review.createdAt,
       updatedAt: review.updatedAt,
     }));
@@ -84,7 +84,7 @@ const insertReviews = async (req, res) => {
       userId,
       produk_id,
       rating,
-      review_text,
+      komentar,
       userName,
       userPhotoURL,
       order_id,
@@ -117,12 +117,10 @@ const insertReviews = async (req, res) => {
     });
 
     if (!userOrder) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Anda harus membeli produk ini terlebih dahulu untuk memberikan review",
-        });
+      return res.status(400).json({
+        error:
+          "Anda harus membeli produk ini terlebih dahulu untuk memberikan review",
+      });
     }
 
     // Buat review baru
@@ -132,7 +130,7 @@ const insertReviews = async (req, res) => {
       produk_id,
       order_id: order_id || userOrder._id,
       rating: Number(rating),
-      komentar: review_text || "",
+      komentar: komentar || "",
       userName: userName || "Anonymous",
       userPhotoURL: userPhotoURL || "",
     };
@@ -197,17 +195,20 @@ const queryAllReviewsAdmin = async (req, res) => {
           order_id: r.order_id || "N/A", // order_id tetap muncul
           user: user
             ? {
-              name: user.name,
-              email: user.email,
-              photo: user.photoURL,
-            }
-            : { name: r.userName || "Anonymous", photo: r.userPhotoURL || null },
+                name: user.name,
+                email: user.email,
+                photo: user.photoURL,
+              }
+            : {
+                name: r.userName || "Anonymous",
+                photo: r.userPhotoURL || null,
+              },
           produk: product
             ? {
-              nama: product.nama,
-              img_url: product.img_url,
-              harga: product.harga,
-            }
+                nama: product.nama,
+                img_url: product.img_url,
+                harga: product.harga,
+              }
             : null,
         };
       })
@@ -219,8 +220,6 @@ const queryAllReviewsAdmin = async (req, res) => {
     return res.status(500).json({ error: "Gagal mengambil semua review" });
   }
 };
-
-
 
 module.exports = {
   queryReviews,
