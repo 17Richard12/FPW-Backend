@@ -5,13 +5,10 @@ const { v4: uuidv4 } = require("uuid");
 // Mengambil keranjang user + Menghitung stok produk secara realtime
 const queryCart = async (req, res) => {
   try {
-<<<<<<< HEAD
-    const { id } = req.params;
-=======
-    const { userId } = req.query;
->>>>>>> ffef3f56b6626e911def7d8ec4e093196da99fec
 
-    const userId = req.query.userId;
+    const { id } = req.params;
+    const { userId } = req.query;
+
     if (!userId) return res.status(400).json({ error: "userId diperlukan" });
 
     // 1. Ambil semua item keranjang user
