@@ -7,7 +7,7 @@ const productSchema = new Schema(
     harga: Number,
     img_name: String,
     img_url: String,
-    kategori: String,
+    kategori_id: String,
     deskripsi: String,
     link_shopee: String,
     link_tokopedia: String,

@@ -10,8 +10,9 @@ const queryProduct = async (req, res) => {
     if (keyword) {
       filter.nama = new RegExp(keyword, "i");
     }
+
     if (kategori) {
-      filter.kategori = new RegExp(kategori, "i");
+      filter.kategori_id = new RegExp(kategori, "i");
     }
 
     const products = await Product.find(filter).exec();
@@ -28,7 +29,7 @@ const queryProduct = async (req, res) => {
         }, 0);
 
         // Ambil data kategori
-        const category = await Categories.findById(product.kategori);
+        const category = await Categories.findById(product.kategori_id);
 
         return {
           ...product.toObject(),
@@ -167,7 +168,7 @@ const updateProduct = async (req, res) => {
     const updateData = {};
     if (nama !== undefined) updateData.nama = nama;
     if (harga !== undefined) updateData.harga = Number(harga);
-    if (kategori_id !== undefined) updateData.kategori = kategori_id;
+    if (kategori_id !== undefined) updateData.kategori_id = kategori_id;
     if (img_url !== undefined) updateData.img_url = img_url;
     if (img_name !== undefined) updateData.img_name = img_name;
     if (deskripsi !== undefined) updateData.deskripsi = deskripsi;
