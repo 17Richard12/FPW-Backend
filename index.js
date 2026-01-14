@@ -13,6 +13,7 @@ const {
 const app = express();
 const port = 3000;
 require("dotenv").config();
+require("./src/config/firebase");
 
 const cors = require("cors");
 const corsOptions = {
